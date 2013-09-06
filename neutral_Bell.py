@@ -90,22 +90,30 @@ class community:
             if immigrants_sp:
                 for ind in range(immigrants_sp):
                     loc = self.margin[randint(0, len(self.margin))]
-                    self.immigrants.append((str(sp), loc))
+                    self.immigrants.append([str(sp), loc])
 
-    def birth(self, b, A):
+    def birth(self, b, A, k):
         """Birth process which is assumed to be association-dependent.
         
         Creates a list of newborns with species identity and initial location.
         The newborns will be distributed to local communities through dispersal after 
         death process.
         Input:
-        b - birth rate
-        A - association matrix
-        
+        b - intrinsic birth rate (when association is zero)
+        A - S * S association matrix (list of lists)
+        k - strength of associations on birth rate
         """
-        newborns = []
-        for COM in self.COMS:
-            
+        self.newborns = []
+        for i, COM in enumerate(self.COMS):
+            loc_COM = one_to_two_d(i, self.D)
+            for (sp1, abd1) in COM.items():
+                A_list = [abd2 * A[int(sp1)][int(sp2)] for (sp2, abd2) in COM.items()]
+                A_sum_sp1 = sum(A_list)
+                t_sp1 = k ** A_sum_sp1 / (N - 1) # Amax = N - 1
+                newborn_sp1 = binomial(abd1, b ** (1 / t_sp1))
+                if newborn_sp1:
+                    self.newborns.extend([[sp1, loc_COM]] * new_born_sp1)
+                
     def death(self, d):
         """Death process which is assumed to be association-independent.
         
