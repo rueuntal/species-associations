@@ -3,6 +3,30 @@ from scipy.stats import binom
 import numpy as np
 from numpy.random import *
 
+def two_to_one_d(loc, D):
+    """Compute the index in a 1-d list from (x, y) coordinates 
+    
+    in the corresponding 2-d grid system.
+    
+    Input:
+    loc - list [x, y], coordinates in 2-d grid system
+    D - length/width of the grid system
+    """
+    return loc[0] + loc[1] * D
+
+def one_to_two_d(i, D):
+    """Compute the coordinates (x, y) in a 2-d grid system from
+    
+    the index in the corresponding 1-d list.
+    
+    Input:
+    i - index in 1-d list
+    D - length/width of the 2-d grid system
+    """
+    y = int(np.floor(i / D))
+    x = i - D * y
+    return [x, y]
+            
 class community:
     def __init__(self, D):
         """Initializing the local community, which 
@@ -42,6 +66,13 @@ class community:
         kwargs - parameters needed for disp_func
         
         """
+        for ind in dispersers:
+            ind_sp = ind[0]
+            ind_loc = ind[1]
+            new_loc = disp_func(ind_loc, self.D, self.D, **kwargs)
+            new_index = two_to_one_d(new_loc, self.D)
+            COM = self.COMS[new_index]
+            COM[ind_sp] += 1
     
     def immigration(self, global_rad, m):
         """Process of individuals immigrating from 
@@ -62,19 +93,21 @@ class community:
                     self.immigrants.append((str(sp), loc))
 
     def birth(self, b, A):
-        """Birth process which is assumed to be 
+        """Birth process which is assumed to be association-dependent.
         
-        association-dependent.
-        
+        Creates a list of newborns with species identity and initial location.
+        The newborns will be distributed to local communities through dispersal after 
+        death process.
         Input:
         b - birth rate
         A - association matrix
         
         """
+        newborns = []
+        for COM in self.COMS:
+            
     def death(self, d):
-        """Death process which is assumed to be 
-        
-        association-independent.
+        """Death process which is assumed to be association-independent.
         
         Input:
         d - death rate
