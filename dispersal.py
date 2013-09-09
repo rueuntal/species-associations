@@ -34,7 +34,7 @@ def brownian(init_loc, M1, M2, u, bound = 'p'):
     num_step = geometric(1 - u) - 1 # Number of steps to move
     if num_step:
         new_steps = [step_list[randint(0, 4)] for i in range(num_step)]
-        if bound == 'np':
+        if bound == 'p':
             sum_steps = sum(new_steps)
             new_loc = [init_loc[0] + sum_steps[0], init_loc[1] + sum_steps[1]]
             if new_loc[0] in range(M1) and new_loc[1] in range(M2):
