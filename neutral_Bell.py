@@ -28,7 +28,7 @@ def one_to_two_d(i, D):
     return [x, y]
             
 class community:
-    def __init__(self, D):
+    def __init__(self, D, K, S):
         """Initializing the local community, which 
         
         will be held in a list of dictionaries.
@@ -40,6 +40,7 @@ class community:
         """
         self.D = D
         self.K = K
+        self.S = S
         self.margin = [] # A list to hold the position of marginal cells
         for i in range(D)[1:-1]:
             self.margin.append([0, i]) # Upper margin
@@ -85,14 +86,14 @@ class community:
         m - rate of immigration, expected number of immigrants per time step
         """
         self.immigrants = []
-        for sp in range(S):
-            immigrants_sp = binom(m, global_rad[sp])
+        for sp in range(self.S):
+            immigrants_sp = binomial(m, global_rad[sp])
             if immigrants_sp:
                 for ind in range(immigrants_sp):
                     loc = self.margin[randint(0, len(self.margin))]
                     self.immigrants.append([str(sp), loc])
 
-    def birth(self, b, A, k):
+    def birth(self, b, k, A):
         """Birth process which is assumed to be association-dependent.
         
         Creates a list of newborns with species identity and initial location.
@@ -100,19 +101,20 @@ class community:
         death process.
         Input:
         b - intrinsic birth rate (when association is zero)
-        A - S * S association matrix (list of lists)
+        A - S * S association matrix (list of lists). 
         k - strength of associations on birth rate
         """
         self.newborns = []
         for i, COM in enumerate(self.COMS):
             loc_COM = one_to_two_d(i, self.D)
             for (sp1, abd1) in COM.items():
-                A_list = [abd2 * A[int(sp1)][int(sp2)] for (sp2, abd2) in COM.items()]
-                A_sum_sp1 = sum(A_list)
-                t_sp1 = k ** A_sum_sp1 / (N - 1) # Amax = N - 1
-                newborn_sp1 = binomial(abd1, b ** (1 / t_sp1))
-                if newborn_sp1:
-                    self.newborns.extend([[sp1, loc_COM]] * new_born_sp1)
+                if abd1: 
+                    A_list = [abd2 * A[int(sp1)][int(sp2)] for (sp2, abd2) in COM.items()]
+                    A_sum_sp1 = sum(A_list)
+                    t_sp1 = k ** A_sum_sp1 / (self.K - 1) # Amax = N - 1
+                    newborn_sp1 = binomial(abd1, b ** (1 / t_sp1))
+                    if newborn_sp1:
+                        self.newborns.extend([[sp1, loc_COM]] * newborn_sp1)
                 
     def death(self, d):
         """Death process which is assumed to be association-independent.
