@@ -71,9 +71,10 @@ class community:
             ind_sp = ind[0]
             ind_loc = ind[1]
             new_loc = disp_func(ind_loc, self.D, self.D, **kwargs)
-            new_index = two_to_one_d(new_loc, self.D)
-            COM = self.COMS[new_index]
-            COM[ind_sp] += 1
+            if new_loc: # If the disperser is not lost over boundary
+                new_index = two_to_one_d(new_loc, self.D)
+                COM = self.COMS[new_index]
+                COM[ind_sp] += 1
     
     def immigration(self, global_rad, m):
         """Process of individuals immigrating from 
@@ -111,7 +112,7 @@ class community:
                 if abd1: 
                     A_list = [abd2 * A[int(sp1)][int(sp2)] for (sp2, abd2) in COM.items()]
                     A_sum_sp1 = sum(A_list)
-                    t_sp1 = k ** A_sum_sp1 / (self.K - 1) # Amax = N - 1
+                    t_sp1 = k ** (A_sum_sp1 / (self.K - 1)) # Amax = N - 1
                     newborn_sp1 = binomial(abd1, b ** (1 / t_sp1))
                     if newborn_sp1:
                         self.newborns.extend([[sp1, loc_COM]] * newborn_sp1)
