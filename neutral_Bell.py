@@ -2,6 +2,7 @@ from __future__ import division
 from scipy.stats import binom
 import numpy as np
 from numpy.random import *
+from random import sample
 
 def two_to_one_d(loc, D):
     """Compute the index in a 1-d list from (x, y) coordinates 
@@ -140,7 +141,7 @@ class community:
             num_remove = sum(COM.values()) - self.K
             if num_remove > 0:
                 remove_list = []
-                rand_list = sorted(uniform(0, sum(COM.values()), num_remove))
+                rand_list = sorted(sample(range(sum(COM.values())), num_remove))
                 rand_list.append(sum(COM.values()) + 1)
                 i = 0
                 upto = 0
