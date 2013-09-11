@@ -147,7 +147,7 @@ class community:
                 upto = 0
                 for (sp, abd) in COM.items():
                     upto += abd
-                    while upto >= rand_list[i]:
+                    while upto > rand_list[i]:
                         i += 1
                         remove_list.append(sp)
                 for ind in remove_list:
