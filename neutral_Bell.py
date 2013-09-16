@@ -52,11 +52,9 @@ class community:
         self.margin.append([D - 1, D - 1])
         self.margin.append([0, D - 1])
         self.margin.append([D - 1, 0])
-
-        self.COMS = [{} for i in range(D ** 2)]
-        for COM in self.COMS:
-            for i in range(S):
-                COM[str(i)] = 0
+        
+        # Start with empty community
+        self.COMS = [np.array([0 for i in range(S)]) for j in range(D ** 2)]
         
     def dispersal(self, dispersers, disp_func, **kwargs):
         """Dispersal process of immigrants or newborns.
@@ -74,8 +72,7 @@ class community:
             new_loc = disp_func(ind_loc, self.D, self.D, **kwargs)
             if new_loc: # If the disperser is not lost over boundary
                 new_index = two_to_one_d(new_loc, self.D)
-                COM = self.COMS[new_index]
-                COM[ind_sp] += 1
+                self.COMS[new_index][int(ind_sp)] += 1
     
     def immigration(self, global_rad, m):
         """Process of individuals immigrating from 
@@ -109,10 +106,9 @@ class community:
         self.newborns = []
         for i, COM in enumerate(self.COMS):
             loc_COM = one_to_two_d(i, self.D)
-            for (sp1, abd1) in COM.items():
-                if abd1: 
-                    A_list = [abd2 * A[int(sp1)][int(sp2)] for (sp2, abd2) in COM.items()]
-                    A_sum_sp1 = sum(A_list)
+            for sp1, abd1 in enumerate(COM):
+                if abd1:
+                    A_sum_sp1 = np.dot(COM, A[int(sp1)])
                     t_sp1 = k ** (A_sum_sp1 / (self.K - 1)) # Amax = N - 1
                     newborn_sp1 = binomial(abd1, b ** (1 / t_sp1))
                     if newborn_sp1:
@@ -126,9 +122,9 @@ class community:
         
         """
         for COM in self.COMS:
-            for (sp, abd) in COM.items():
+            for i, abd in enumerate(COM):
                 if abd: # Check abundance is not zero already
-                    COM[sp] = binomial(abd, 1 - d)
+                    COM[i] = binomial(abd, 1 - d)
 
     def culling(self):
         """Culling process to remove excess individuals 
@@ -138,17 +134,17 @@ class community:
         
         """
         for COM in self.COMS:
-            num_remove = sum(COM.values()) - self.K
+            num_remove = sum(COM) - self.K
             if num_remove > 0:
                 remove_list = []
-                rand_list = sorted(sample(range(sum(COM.values())), num_remove))
-                rand_list.append(sum(COM.values()) + 1)
+                rand_list = sorted(sample(range(sum(COM)), num_remove))
+                rand_list.append(sum(COM) + 1)
                 i = 0
                 upto = 0
-                for (sp, abd) in COM.items():
+                for sp in COM:
                     upto += abd
                     while upto > rand_list[i]:
                         i += 1
                         remove_list.append(sp)
                 for ind in remove_list:
-                    COM[ind] -= 1
+                    COM[int(ind)] -= 1
