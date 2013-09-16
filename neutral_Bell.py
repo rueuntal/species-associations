@@ -141,7 +141,7 @@ class community:
                 rand_list.append(sum(COM) + 1)
                 i = 0
                 upto = 0
-                for sp in COM:
+                for sp, abd in enumerate(COM):
                     upto += abd
                     while upto > rand_list[i]:
                         i += 1
