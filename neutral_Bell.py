@@ -52,9 +52,15 @@ class community:
         self.margin.append([D - 1, D - 1])
         self.margin.append([0, D - 1])
         self.margin.append([D - 1, 0])
-        
-        # Start with empty community
-        self.COMS = [np.array([0 for i in range(S)]) for j in range(D ** 2)]
+    
+    def start_community(self):
+        """Start with empty community"""
+        self.COMS = [np.array([0 for i in range(self.S)]) for j in range(self.D ** 2)]
+    
+    def start_community_v2(self, global_rad):
+        """Start with full community, where individuals are random draws from global RAD"""
+        self.COMS = [np.array([binomial(self.K, global_rad[i]) for i in range(self.S)]) \
+                     for j in range(self.D ** 2)]
         
     def dispersal(self, dispersers, disp_func, **kwargs):
         """Dispersal process of immigrants or newborns.
@@ -91,7 +97,23 @@ class community:
                 for ind in range(immigrants_sp):
                     loc = self.margin[randint(0, len(self.margin))]
                     self.immigrants.append([str(sp), loc])
-
+    
+    def immigration_v2(self, global_rad, m):
+        """Process of individuals immigrating from
+        
+        metacommunity to local communities.
+        In this new version, immigrants can enter any cell, instead of
+        just the marginal cells.
+        Input:
+        global_rad - relative global abundance of species, a list of length S
+        m - rate of immigration, expected number of immigrants PER CELL per time step
+        
+        """
+        for COM in self.COMS:
+            for sp in range(self.S):
+                immigrants_sp = binomial(m, global_rad[sp])
+                COM[str(sp)] += immigrants_sp
+                
     def birth(self, b, k, A):
         """Birth process which is assumed to be association-dependent.
         
