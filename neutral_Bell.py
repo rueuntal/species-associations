@@ -112,7 +112,7 @@ class community:
         for COM in self.COMS:
             for sp in range(self.S):
                 immigrants_sp = binomial(m, global_rad[sp])
-                COM[str(sp)] += immigrants_sp
+                COM[int(sp)] += immigrants_sp
                 
     def birth(self, b, k, A):
         """Birth process which is assumed to be association-dependent.
