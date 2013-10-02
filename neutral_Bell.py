@@ -111,7 +111,7 @@ class community:
         """
         for COM in self.COMS:
             for sp in range(self.S):
-                immigrants_sp = binomial(m, global_rad[sp])
+                immigrants_sp = binomial(self.S, m * global_rad[sp]) # Assuming m < 1
                 COM[int(sp)] += immigrants_sp
                 
     def birth(self, b, k, A):
