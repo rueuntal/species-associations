@@ -1,7 +1,8 @@
 from __future__ import division
 import numpy as np
-from numpy.random import binomial
+from numpy.random import binomial, randint
 from random import sample
+from dispersal import rand_disperse
 
 def two_to_one_d(loc, D):
     """Compute the index in a 1-d list from (x, y) coordinates 
@@ -108,10 +109,15 @@ class community:
         m - rate of immigration, expected number of immigrants PER CELL per time step
         
         """
-        for COM in self.COMS:
-            for sp, abd in enumerate(COM):
-                immigrants_sp = binomial(self.S, m * global_rad[sp]) # Assuming m < 1
-                COM[sp] = abd + immigrants_sp
+        immigrants = []
+        for sp in range(self.S):
+            immigrants_sp = binomial(self.S * self.D ** 2, m * global_rad[sp])
+            if immigrants_sp:
+                immigrants.extend([sp] * immigrants_sp)
+        for ind in immigrants:
+            new_loc = rand_disperse([0, 0], self.D, self.D)
+            new_index = two_to_one_d(new_loc, self.D)
+            self.COMS[new_index][ind] += 1
                 
     def birth(self, b, k, A):
         """Birth process which is assumed to be association-dependent.
