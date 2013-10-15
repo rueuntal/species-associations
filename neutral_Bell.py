@@ -118,9 +118,9 @@ class community:
             new_loc = rand_disperse([0, 0], self.D, self.D)
             new_index = two_to_one_d(new_loc, self.D)
             self.COMS[new_index][ind] += 1
-                
-    def birth(self, b, k, A):
-        """Birth process which is assumed to be association-dependent.
+                   
+    def birth_death(self, b, k, A, d):
+        """Association-dependent birth process and A-independent death process.
         
         Creates a list of newborns with species identity and initial location.
         The newborns will be distributed to local communities through dispersal after 
@@ -129,30 +129,20 @@ class community:
         b - intrinsic birth rate (when association is zero)
         A - S * S association matrix (list of lists). 
         k - strength of associations on birth rate
-        """
-        self.newborns = []
-        for i, COM in enumerate(self.COMS):
-            loc_COM = one_to_two_d(i, self.D)
-            for sp1, abd1 in enumerate(COM):
-                if abd1:
-                    A_sum_sp1 = np.dot(COM, A[int(sp1)])
-                    t_sp1 = k ** (A_sum_sp1 / (self.K - 1)) # Amax = N - 1
-                    newborn_sp1 = binomial(abd1, b ** (1 / t_sp1))
-                    if newborn_sp1:
-                        self.newborns.extend([[sp1, loc_COM]] * newborn_sp1)
-                
-    def death(self, d):
-        """Death process which is assumed to be association-independent.
-        
-        Input:
         d - death rate
-        
         """
-        for COM in self.COMS:
-            for i, abd in enumerate(COM):
-                if abd: # Check abundance is not zero already
-                    COM[i] = binomial(abd, 1 - d)
 
+        for loc_1d, COM in enumerate(self.COMS):
+            loc_2d = one_to_two_d(loc_1d, self.D)
+            for sp, abd in enumerate(COM):
+                if abd:
+                    A_sum_sp = np.dot(COM, A[sp])
+                    t_sp = k ** (A_sum_sp / (self.K - 1))
+                    newborn_sp = binomial(abd, b ** (1 / t_sp))
+                    COM[sp] = binomial(abd, 1 - d)
+                    if newborn_sp:
+                        self.newborns.extend([[sp, loc_2d]] * newborn_sp)
+                    
     def culling(self):
         """Culling process to remove excess individuals 
         
