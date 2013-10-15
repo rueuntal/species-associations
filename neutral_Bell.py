@@ -1,7 +1,6 @@
 from __future__ import division
-from scipy.stats import binom
 import numpy as np
-from numpy.random import *
+from numpy.random import binomial
 from random import sample
 
 def two_to_one_d(loc, D):
@@ -110,9 +109,9 @@ class community:
         
         """
         for COM in self.COMS:
-            for sp in range(self.S):
+            for sp, abd in enumerate(COM):
                 immigrants_sp = binomial(self.S, m * global_rad[sp]) # Assuming m < 1
-                COM[int(sp)] += immigrants_sp
+                COM[sp] = abd + immigrants_sp
                 
     def birth(self, b, k, A):
         """Birth process which is assumed to be association-dependent.
@@ -170,3 +169,64 @@ class community:
                         remove_list.append(sp)
                 for ind in remove_list:
                     COM[int(ind)] -= 1
+                    
+    def culling_v2(self):
+        """Culling process to remove excess individuals 
+        
+        and maintain carrying capacity, which is assumed to
+        be association-independent.
+        
+        In this version culling is a binomial process,
+        i.e., carrying capacity K is only an expectation, not
+        a hard bound.
+        
+        """
+        for COM in self.COMS:
+            N = sum(COM)
+            if N > self.K:
+                for sp, abd in enumerate(COM):
+                    if abd: 
+                        COM[sp] = binomial(abd, self.K / N)
+    
+    def proc_comb(self, m, global_rad, A, k, b, d, disp_func, **kwargs):
+        """Combine the five processes into one cycle for speed.
+        
+        This way in each timestep the loop goes through each sp in each cell
+        only once, not 4 times. 
+        Here use culling_v2 and immigration_v2 for spped.
+        Note that culling process is pulled ahead to facilitate the loop. 
+        Thus one additional culling has to be done before any analysis.
+        Input:
+        m - immigration rate
+        global_rate - global RAD as pmf of length S
+        A - association matrix
+        k - strength of association
+        b - intrinsic birth rate with no association
+        d - death rate
+        disp_func - dispersal kernel
+        kwargs - other parameters called by disp_func
+        
+        """
+        newborns = []
+        for loc, COM in enumerate(self.COMS):
+            N = sum(COM)
+            loc_2d = one_to_two_d(loc, self.D)
+            for sp, abd in enumerate(COM):
+                # 1. Culling, v2
+                if N > self.K and abd:
+                    abd = binomial(abd, self.K / N)
+                # 2. Immigration, v2
+                immigrants_sp = binomial(self.S, m * global_rad[sp])
+                abd += immigrants_sp
+                if abd:
+                    # 3. Birth
+                    A_sum_sp = np.dot(COM, A[sp])
+                    t_sp = k ** (A_sum_sp / (self.K - 1))
+                    newborn_sp = binomial(abd, b ** (1 / t_sp))
+                    if newborn_sp:
+                        newborns.extend([[sp, loc_2d]] * newborn_sp)
+                    # 4. Death
+                    abd = binomial(abd, 1 - d)
+                COM[sp] = abd
+        # 5. Dispersal
+        self.dispersal(newborns, disp_func, **kwargs)
