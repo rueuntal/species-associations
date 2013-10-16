@@ -9,14 +9,14 @@ def rand_disperse(init_loc, M1, M2):
     """Random dispersal with equal probability to any grid cell.
     
     Input: 
-    init_loc - list [x0, y0] representing initial location
+    init_loc - tuple (x0, y0) representing initial location
       Not functional in this model. 
     M1, M2 - length and width of the whole grid 
     
     """
     x = randint(0, M1)
     y = randint(0, M2)
-    return [x, y]
+    return (x, y)
 
 def brownian(init_loc, M1, M2, u, bound = 'p'):
     """Brownian dispersal with probability u of dipersing to neighbouring cells 
@@ -36,7 +36,7 @@ def brownian(init_loc, M1, M2, u, bound = 'p'):
         new_steps = [step_list[randint(0, 4)] for i in range(num_step)]
         if bound == 'p':
             sum_steps = sum(new_steps)
-            new_loc = [init_loc[0] + sum_steps[0], init_loc[1] + sum_steps[1]]
+            new_loc = (init_loc[0] + sum_steps[0], init_loc[1] + sum_steps[1])
             if new_loc[0] in range(M1) and new_loc[1] in range(M2):
                 return new_loc
             else: return None
@@ -45,7 +45,7 @@ def brownian(init_loc, M1, M2, u, bound = 'p'):
                 while ((init_loc[0] + step[0]) not in range (M1) or \
                        (init_loc[1] + step[1]) not in range (M2)):
                     step = step_list[randint(0, 4)]
-                init_loc = [init_loc[0] + step[0], init_loc[1] + step[1]]
+                init_loc = (init_loc[0] + step[0], init_loc[1] + step[1])
             return init_loc
     else: return init_loc
             
@@ -62,7 +62,7 @@ def Gaussian(init_loc, M1, M2, sigma, bound = 'p'):
     x_new = int(init_loc[0] + round(dist * math.cos(radian)))
     y_new = int(init_loc[1] + round(dist * math.sin(radian)))
     if x_new in range(M1) and y_new in range(M2):
-        return [x_new, y_new]
+        return (x_new, y_new)
     else:
         if bound == 'p':
             return None

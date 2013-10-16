@@ -10,7 +10,7 @@ def two_to_one_d(loc, D):
     in the corresponding 2-d grid system.
     
     Input:
-    loc - list [x, y], coordinates in 2-d grid system
+    loc - tuple (x, y), coordinates in 2-d grid system
     D - length/width of the grid system
     """
     return loc[0] + loc[1] * D
@@ -26,7 +26,7 @@ def one_to_two_d(i, D):
     """
     y = int(np.floor(i / D))
     x = i - D * y
-    return [x, y]
+    return (x, y)
             
 class community:
     def __init__(self, D, K, S):
@@ -43,6 +43,13 @@ class community:
         self.K = K
         self.S = S
         self.margin = [] # A list to hold the position of marginal cells
+        self.one_to_two_d_dic = {}
+        self.two_to_one_d_dic = {}
+        for x in range(D):
+            for y in range(D):
+                index = two_to_one_d((x,  y), self.D)
+                self.one_to_two_d_dic[index] = (x, y)
+                self.two_to_one_d_dic[(x,  y)] = index
         for i in range(D)[1:-1]:
             self.margin.append([0, i]) # Upper margin
             self.margin.append([D - 1, i])  # Lower margin
@@ -72,13 +79,11 @@ class community:
         kwargs - parameters needed for disp_func
         
         """
-        for ind in dispersers:
-            ind_sp = ind[0]
-            ind_loc = ind[1]
-            new_loc = disp_func(ind_loc, self.D, self.D, **kwargs)
+        for sp, loc in dispersers:
+            new_loc = disp_func(loc, self.D, self.D, **kwargs)
             if new_loc: # If the disperser is not lost over boundary
-                new_index = two_to_one_d(new_loc, self.D)
-                self.COMS[new_index][int(ind_sp)] += 1
+                new_index = self.two_to_one_d_dic[new_loc]
+                self.COMS[new_index][sp] += 1
     
     def immigration(self, global_rad, m):
         """Process of individuals immigrating from 
@@ -115,8 +120,8 @@ class community:
             if immigrants_sp:
                 immigrants.extend([sp] * immigrants_sp)
         for ind in immigrants:
-            new_loc = rand_disperse([0, 0], self.D, self.D)
-            new_index = two_to_one_d(new_loc, self.D)
+            new_loc = rand_disperse((0, 0), self.D, self.D)
+            new_index = self.two_to_one_d_dic[new_loc]
             self.COMS[new_index][ind] += 1
                    
     def birth_death(self, b, k, A, d):
@@ -131,9 +136,10 @@ class community:
         k - strength of associations on birth rate
         d - death rate
         """
-
+        
+        self.newborns = []
         for loc_1d, COM in enumerate(self.COMS):
-            loc_2d = one_to_two_d(loc_1d, self.D)
+            loc_2d = self.one_to_two_d_dic[loc_1d]
             for sp, abd in enumerate(COM):
                 if abd:
                     A_sum_sp = np.dot(COM, A[sp])
@@ -184,45 +190,45 @@ class community:
                     if abd: 
                         COM[sp] = binomial(abd, self.K / N)
     
-    def proc_comb(self, m, global_rad, A, k, b, d, disp_func, **kwargs):
-        """Combine the five processes into one cycle for speed.
+    #def proc_comb(self, m, global_rad, A, k, b, d, disp_func, **kwargs):
+        #"""Combine the five processes into one cycle for speed.
         
-        This way in each timestep the loop goes through each sp in each cell
-        only once, not 4 times. 
-        Here use culling_v2 and immigration_v2 for spped.
-        Note that culling process is pulled ahead to facilitate the loop. 
-        Thus one additional culling has to be done before any analysis.
-        Input:
-        m - immigration rate
-        global_rate - global RAD as pmf of length S
-        A - association matrix
-        k - strength of association
-        b - intrinsic birth rate with no association
-        d - death rate
-        disp_func - dispersal kernel
-        kwargs - other parameters called by disp_func
+        #This way in each timestep the loop goes through each sp in each cell
+        #only once, not 4 times. 
+        #Here use culling_v2 and immigration_v2 for spped.
+        #Note that culling process is pulled ahead to facilitate the loop. 
+        #Thus one additional culling has to be done before any analysis.
+        #Input:
+        #m - immigration rate
+        #global_rate - global RAD as pmf of length S
+        #A - association matrix
+        #k - strength of association
+        #b - intrinsic birth rate with no association
+        #d - death rate
+        #disp_func - dispersal kernel
+        #kwargs - other parameters called by disp_func
         
-        """
-        newborns = []
-        for loc, COM in enumerate(self.COMS):
-            N = sum(COM)
-            loc_2d = one_to_two_d(loc, self.D)
-            for sp, abd in enumerate(COM):
-                # 1. Culling, v2
-                if N > self.K and abd:
-                    abd = binomial(abd, self.K / N)
-                # 2. Immigration, v2
-                immigrants_sp = binomial(self.S, m * global_rad[sp])
-                abd += immigrants_sp
-                if abd:
-                    # 3. Birth
-                    A_sum_sp = np.dot(COM, A[sp])
-                    t_sp = k ** (A_sum_sp / (self.K - 1))
-                    newborn_sp = binomial(abd, b ** (1 / t_sp))
-                    if newborn_sp:
-                        newborns.extend([[sp, loc_2d]] * newborn_sp)
-                    # 4. Death
-                    abd = binomial(abd, 1 - d)
-                COM[sp] = abd
-        # 5. Dispersal
-        self.dispersal(newborns, disp_func, **kwargs)
+        #"""
+        #newborns = []
+        #for loc, COM in enumerate(self.COMS):
+            #N = sum(COM)
+            #loc_2d = one_to_two_d(loc, self.D)
+            #for sp, abd in enumerate(COM):
+                ## 1. Culling, v2
+                #if N > self.K and abd:
+                    #abd = binomial(abd, self.K / N)
+                ## 2. Immigration, v2
+                #immigrants_sp = binomial(self.S, m * global_rad[sp])
+                #abd += immigrants_sp
+                #if abd:
+                    ## 3. Birth
+                    #A_sum_sp = np.dot(COM, A[sp])
+                    #t_sp = k ** (A_sum_sp / (self.K - 1))
+                    #newborn_sp = binomial(abd, b ** (1 / t_sp))
+                    #if newborn_sp:
+                        #newborns.extend([[sp, loc_2d]] * newborn_sp)
+                    ## 4. Death
+                    #abd = binomial(abd, 1 - d)
+                #COM[sp] = abd
+        ## 5. Dispersal
+        #self.dispersal(newborns, disp_func, **kwargs)
