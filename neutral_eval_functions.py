@@ -161,7 +161,24 @@ def plot_dd_sample(coms, ax, D, index = BrayCurtis, n_sample = 200):
         dist_list.append(Euclidean(one_to_two_d(a, D), one_to_two_d(b, D)))
     ax.plot(sorted(dist_list), [x for (y, x) in sorted(zip(dist_list, dd_list))], 
             'o-', color = '#9400D3')
-    
+
+def plot_dd_binned(coms, ax, index = BrayCurtis, num_bins = 10):
+    """Lump distance decay between all cell pairs into log bins to smooth the curve"""
+    D = int(np.sqrt(len(coms)))
+    dist_list = []
+    dd_list = []
+    for i in range(len(coms) - 1):
+        for j in range(i + 1, len(coms)):
+            dist_list.append(Euclidean(one_to_two_d(i, D), one_to_two_d(j, D)))
+            dd_list.append(index(coms[i], coms[j]))
+    bin_width = np.log(max(dist_list) + 1) / num_bins
+    bins = np.exp(bin_width) ** np.array(range(num_bins + 1))
+    # Obtain mean dd within each bin
+    dist_digitize = np.digitize(dist_list, bins)
+    dist_means = [np.array(dist_list)[dist_digitize == i].mean() for i in range(1, len(bins))]
+    dd_means = [np.array(dd_list)[dist_digitize == i].mean() for i in range(1, len(bins))]
+    ax.plot(dist_means, dd_means, 'o-', color = '#9400D3')
+
 def plot_heat_map(community, ax, obj = 'N', m = 2):
     """Plot a heatmap of S or N inside local communities"""
     obj_list = [[0 for x in range(0, community.D)] for y in range(0, community.D)]
