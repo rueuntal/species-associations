@@ -9,7 +9,7 @@ from neutral_Bell import *
 from dispersal import *
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
-from random import sample, randint
+from random import sample, randint, uniform
 
 def BrayCurtis(com1, com2):
     """Return the Bray-Curtis index between two communities"""
@@ -18,7 +18,22 @@ def BrayCurtis(com1, com2):
 def Euclidean(sample1, sample2):
     """Return the Euclidean distance between two samples"""
     return np.sqrt(sum((np.array(sample1) - np.array(sample2)) ** 2))
+
+def weighted_sample(weights):
+    """Given weights, return the index of choice.
     
+    Weights do not have to be standardized.
+    Code modified from http://stackoverflow.com/questions/3679694/a-weighted-version-of-random-choice
+    
+    """
+    weight_total = sum(weights)
+    r = uniform(0, weight_total)
+    upto = 0
+    for c, w in enumerate(weights):
+        if upto + w > r:
+            return c
+        upto += w
+        
 def remove_margin(community, m):
     """Remove the marginal cells
     
@@ -66,6 +81,33 @@ def get_CA(coms):
     CA_st = 4 * counts / num_com / (num_com - 1) / num_sp / (num_sp - 1)
     return CA_st
 
+def rand_IT(coms):
+    """Randomize a community (list of lists) using the IT algorithm in 
+    
+    Ulrich and Gotelli 2010.
+    Each individual is randomly assigned to the site*species matrix with probability 
+    proportional to the row and column total for each cell, until the row/column totals
+    are reached.
+    
+    """
+    abd_tot = np.sum(coms)
+    abd_sp = np.sum(coms, axis = 0)
+    abd_site = np.sum(coms, axis = 1)
+    coms_rand = [[0 for sp in range(len(abd_sp))] for site in range(len(abd_site))]
+    rand_abd_sp = [0 for sp in range(len(abd_sp))]
+    rand_abd_site = [0 for site in range(len(abd_site))]
+    for ind in range(abd_tot):
+        index_site = weighted_sample(abd_site)
+        index_sp = weighted_sample(abd_sp)
+        coms_rand[index_site][index_sp] += 1
+        rand_abd_sp[index_sp] += 1
+        rand_abd_site[index_site] += 1
+        if rand_abd_sp[index_sp] == abd_sp[index_sp]:
+            abd_sp[index_sp] = 0
+        if rand_abd_site[index_site] == abd_site[index_site]:
+            abd_site[index_site] = 0
+    return coms_rand
+    
 def get_total_S(coms):
     """Returns the total richness in a list of lists"""
     abd_tot = np.sum(coms, axis = 0)
