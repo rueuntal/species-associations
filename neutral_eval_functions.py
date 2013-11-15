@@ -5,10 +5,12 @@ matplotlib.use('Agg')
 import numpy as np
 import cPickle
 import mete
+import bisect
 from neutral_Bell import *
 from dispersal import *
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
+import random
 from random import sample, randint, uniform
 
 def BrayCurtis(com1, com2):
@@ -20,20 +22,16 @@ def Euclidean(sample1, sample2):
     return np.sqrt(sum((np.array(sample1) - np.array(sample2)) ** 2))
 
 def weighted_sample(weights):
-    """Given weights, return the item of choice.
+    """Given weights, return the index of choice.
     
-    Weights is a dictionary containing the items and their weights.
-    Weights do not have to be standardized.
-    Code modified from http://stackoverflow.com/questions/3679694/a-weighted-version-of-random-choice
+    Weights is a list with weights at different indices.
+    Weights does not have to be standardized.
     
     """
-    weight_total = sum(weights.values())
-    r = uniform(0, weight_total)
-    upto = 0
-    for item in weights:
-        if upto + weights[item] > r:
-            return item
-        upto += weights[item]
+    partsums = np.cumsum(weights)
+    total = partsums[-1]
+    rnd = random.random() * total
+    return bisect.bisect_right(partsums, rnd)
         
 def remove_margin(community, m):
     """Remove the marginal cells
@@ -93,28 +91,20 @@ def rand_IT(coms):
     """
     abd_tot = np.sum(coms)
     abd_sp = np.sum(coms, axis = 0)
-    dic_sp = {}
-    for sp, abd in enumerate(abd_sp):
-        if abd != 0:
-            dic_sp[sp] = abd
     abd_site = np.sum(coms, axis = 1)
-    dic_site = {}
-    for site, abd in enumerate(abd_site):
-        if abd != 0:
-            dic_site[site] = abd
     coms_rand = [[0 for sp in range(len(abd_sp))] for site in range(len(abd_site))]
     rand_abd_sp = [0 for sp in range(len(abd_sp))]
     rand_abd_site = [0 for site in range(len(abd_site))]
     for ind in range(abd_tot):
-        index_site = weighted_sample(dic_site)
-        index_sp = weighted_sample(dic_sp)
+        index_site = weighted_sample(abd_site)
+        index_sp = weighted_sample(abd_sp)
         coms_rand[index_site][index_sp] += 1
         rand_abd_sp[index_sp] += 1
         rand_abd_site[index_site] += 1
-        if rand_abd_sp[index_sp] == dic_sp[index_sp]:
-            del dic_sp[index_sp]
-        if rand_abd_site[index_site] == dic_site[index_site]:
-            del dic_site[index_site]
+        if rand_abd_sp[index_sp] == abd_sp[index_sp]:
+            abd_sp[index_sp] = 0
+        if rand_abd_site[index_site] == abd_site[index_site]:
+            abd_site[index_site] = 0
     return coms_rand
     
 def get_total_S(coms):
