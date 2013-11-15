@@ -18,21 +18,6 @@ def BrayCurtis(com1, com2):
 def Euclidean(sample1, sample2):
     """Return the Euclidean distance between two samples"""
     return np.sqrt(sum((np.array(sample1) - np.array(sample2)) ** 2))
-
-def checkerboard(abd1_s1, abd1_s2, abd2_s1, abd2_s2):
-    """Determine if the abundance of two species at two sites form a 
-    
-    checkerboard pattern.
-    Input: abundace of species 1 and species 2, at site 1 and site 2
-    
-    """
-    if (abd1_s1 > abd1_s2) and (abd1_s1 > abd2_s1) and \
-       (abd2_s2 > abd1_s2) and (abd2_s2 > abd2_s1):
-        return 1
-    elif (abd1_s1 < abd1_s2) and (abd1_s1 < abd2_s1) and \
-         (abd2_s2 < abd1_s2) and (abd2_s2 < abd2_s1):
-        return 1
-    else: return 0
     
 def remove_margin(community, m):
     """Remove the marginal cells
@@ -67,10 +52,17 @@ def get_CA(coms):
         com1 = coms[i]
         for j in range(i, num_com):
             com2 = coms[j]
-            for k in range(num_sp - 1):
-                for l in range(k, num_sp):
-                    counts += checkerboard(com1[sp_indices[k]], com2[sp_indices[k]],\
-                                           com1[sp_indices[l]], com2[sp_indices[l]])
+            i_list = [index for index in sp_indices if com1[index] > com2[index]]
+            j_list = [index for index in sp_indices if com1[index] < com2[index]]
+            # Check if checkerboard
+            for index_i in i_list:
+                abd1_com1 = com1[index_i]
+                abd1_com2 = com2[index_i]
+                for index_j in j_list:
+                    abd2_com1 = com1[index_j]
+                    abd2_com2 = com2[index_j]
+                    if (abd1_com1 > abd2_com1) and (abd2_com2 > abd1_com2):
+                        counts += 1
     CA_st = 4 * counts / num_com / (num_com - 1) / num_sp / (num_sp - 1)
     return CA_st
 
