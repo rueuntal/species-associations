@@ -19,6 +19,21 @@ def Euclidean(sample1, sample2):
     """Return the Euclidean distance between two samples"""
     return np.sqrt(sum((np.array(sample1) - np.array(sample2)) ** 2))
 
+def checkerboard(abd1_s1, abd1_s2, abd2_s1, abd2_s2):
+    """Determine if the abundance of two species at two sites form a 
+    
+    checkerboard pattern.
+    Input: abundace of species 1 and species 2, at site 1 and site 2
+    
+    """
+    if (abd1_s1 > abd1_s2) and (abd1_s1 > abd2_s1) and \
+       (abd2_s2 > abd1_s2) and (abd2_s2 > abd2_s1):
+        return 1
+    elif (abd1_s1 < abd1_s2) and (abd1_s1 < abd2_s1) and \
+         (abd2_s2 < abd1_s2) and (abd2_s2 < abd2_s1):
+        return 1
+    else: return 0
+    
 def remove_margin(community, m):
     """Remove the marginal cells
     
@@ -36,7 +51,29 @@ def remove_margin(community, m):
     inside_grid_1d = [two_to_one_d(grid, community.D) for grid in inside_grid]
     inside_coms = [community.COMS[i] for i in inside_grid_1d]
     return inside_coms
+
+def get_CA(coms):
+    """Obtain the standardized CA value for a community, defined by
     
+    Eqn 3 in Ulrich & Gotelli 2010
+    
+    """
+    abd_tot = np.sum(coms, axis = 0)
+    sp_indices = [sp for sp, abd in enumerate(abd_tot) if abd > 0]
+    num_sp = len(sp_indices)
+    num_com = len(coms)
+    counts = 0
+    for i in range(num_com - 1):
+        com1 = coms[i]
+        for j in range(i, num_com):
+            com2 = coms[j]
+            for k in range(num_sp - 1):
+                for l in range(k, num_sp):
+                    counts += checkerboard(com1[sp_indices[k]], com2[sp_indices[k]],\
+                                           com1[sp_indices[l]], com2[sp_indices[l]])
+    CA_st = 4 * counts / num_com / (num_com - 1) / num_sp / (num_sp - 1)
+    return CA_st
+
 def get_total_S(coms):
     """Returns the total richness in a list of lists"""
     abd_tot = np.sum(coms, axis = 0)
@@ -178,6 +215,9 @@ def plot_dd_binned(coms, ax, index = BrayCurtis, num_bins = 10):
     dist_means = [np.array(dist_list)[dist_digitize == i].mean() for i in range(1, len(bins))]
     dd_means = [np.array(dd_list)[dist_digitize == i].mean() for i in range(1, len(bins))]
     ax.plot(dist_means, dd_means, 'o-', color = '#9400D3')
+    plt.xlabel('Distance')
+    plt.ylabel('Dissimilarity')
+    return ax
 
 def plot_heat_map(community, ax, obj = 'N', m = 2):
     """Plot a heatmap of S or N inside local communities"""
